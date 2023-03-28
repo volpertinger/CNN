@@ -1,6 +1,7 @@
 import logging
 import Configuration.confTG as ct
 import CNNUtils.convolutionalNeuralNetwork as cnn
+import os
 from telegram import Update
 from telegram.ext import filters, MessageHandler, ApplicationBuilder, CommandHandler, ContextTypes, CallbackContext
 
@@ -34,6 +35,7 @@ class TelegramBot:
 
     def __clear_predict(self, filepath):
         result = self.__model.get_predict_string(filepath)
+        os.remove(filepath)
         return result
 
     async def __image(self, update: Update, context: CallbackContext):
