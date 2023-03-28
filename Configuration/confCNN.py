@@ -18,9 +18,10 @@ CMAP = "binary"
 # Train parameters
 # ----------------------------------------------------------------------------------------------------------------------
 BATCH_SIZE = 128
-EPOCHS = 15
+EPOCHS = 100
 LEARNING_RATE = 0.01
 MOMENTUM = 0.9
+VALIDATION_SPLIT = 0.1
 LOSS = "categorical_crossentropy"
 METRICS = ["accuracy"]
 SMALL_DOT = (2, 2)
@@ -49,5 +50,6 @@ MIN_COLOR_SENSITIVITY = 128
 # Other
 # ----------------------------------------------------------------------------------------------------------------------
 WITH_INFO = True
+WITH_PLOT = True
 VERBOSE = 1
 POSSIBILITY_PRECISION = 8
