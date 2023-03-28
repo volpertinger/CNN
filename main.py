@@ -9,4 +9,5 @@ if __name__ == '__main__':
                       cc.POSSIBILITY_PRECISION, cc.WITH_INFO, cc.VERBOSE)
     print(model.get_log())
     model.train()
-    model.predict_test(0)
+    # model.predict_test(0)
+    print(model.predict_image("media/Figure_1.png"))

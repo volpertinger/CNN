@@ -1,6 +1,7 @@
 import string
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import CNNUtils.imageProcessing as ip
 from tensorflow import keras
 from keras.datasets import mnist
 from keras.utils import to_categorical
@@ -118,9 +119,18 @@ class Model:
         if index >= max_index or index < 0:
             self.__logger(f"wrong index. Index must be from 0 to {max_index}", "predict_test")
             return
-        possibility, value = self.__get_predicted_data(index)
+        possibility, value = self.__get_predicted_data(self.__prediction[index])
         self.__show_image(self.__test_input[index],
+                          f"predicted test data: {value}, possibility: {possibility:.{self.__possibility_precision}f}")
+
+    def predict_image(self, path: any):
+        img_raw = ip.rec_digit(path)
+        img4predict = np.array(img_raw).reshape((-1, self.__shape_x, self.__shape_y, self.__shape_z))
+        prediction = self.__model.predict(img4predict)
+        possibility, value = self.__get_predicted_data(prediction[0])
+        self.__show_image(img_raw,
                           f"predicted data: {value}, possibility: {possibility:.{self.__possibility_precision}f}")
+        return value
 
     # ------------------------------------------------------------------------------------------------------------------
     # Private
@@ -173,11 +183,12 @@ class Model:
         plt.title(label)
         plt.show()
 
-    def __get_predicted_data(self, index):
+    @staticmethod
+    def __get_predicted_data(prediction):
         possibility = 0
         result_index = 0
         current_index = 0
-        for element in self.__prediction[index]:
+        for element in prediction:
             if element > possibility:
                 possibility = element
                 result_index = current_index
