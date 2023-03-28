@@ -29,6 +29,7 @@ class Model:
                  learning_rate: float,
                  momentum: float,
                  loss: string,
+                 validation_split: float,
                  metrics: list,
                  small_dot: any,
                  large_dot: any,
@@ -39,6 +40,7 @@ class Model:
                  cmap: string,
                  possibility_precision: int,
                  with_info: bool = True,
+                 with_plot: bool = True,
                  verbose: int = 1):
         self.__dataset = dataset
         self.__img_proc = img_proc
@@ -55,6 +57,7 @@ class Model:
         self.__learning_rate = learning_rate
         self.__momentum = momentum
         self.__loss = loss
+        self.__validation_split = validation_split
         self.__metrics = metrics
         self.__small_dot = small_dot
         self.__large_dot = large_dot
@@ -65,11 +68,13 @@ class Model:
         self.__cmap = cmap
         self.__possibility_precision = possibility_precision
         self.__with_info = with_info
+        self.__with_plot = with_plot
         self.__verbose = verbose
 
         self.__log = ""
         self.__is_trained = False
         self.__prediction = None
+        self.__history = None
 
         # Load the data and split it between train and test sets
         (train_input, train_output), (test_input, test_output) = mnist.load_data()
@@ -160,18 +165,44 @@ class Model:
                         kernel_initializer=self.__kernel_initializer))
         model.add(Dense(self.__small_dense, activation=self.__last_activation))
         opt = SGD(learning_rate=self.__learning_rate, momentum=self.__momentum)
-        model.compile(optimizer=opt, loss=self.__loss, metrics=self.__loss)
+        model.compile(optimizer=opt, loss=self.__loss, metrics=self.__metrics)
         return model
 
     def __train(self):
         self.__logger("start train", "__train")
-        self.__model.fit(self.__train_input, self.__train_output, epochs=self.__epochs, batch_size=self.__batch_size,
-                         verbose=self.__verbose)
+        self.__history = self.__model.fit(self.__train_input, self.__train_output, epochs=self.__epochs,
+                                          batch_size=self.__batch_size, verbose=self.__verbose,
+                                          validation_split=self.__validation_split)
+        if self.__with_info:
+            self.__plot_accuracy()
+            self.__plot_loss()
         self.__after_train_processing()
         self.__logger("saving", "__train")
         self.__model.save(self.__save_path)
         _, acc = self.__model.evaluate(self.__test_input, self.__test_output, verbose=self.__verbose)
         self.__logger(f"accuracy: {acc}", "__train")
+
+    def __plot_accuracy(self):
+        self.__logger(f"plot accuracy started", "__plot_accuracy")
+        plt.plot(self.__history.history['accuracy'])
+        plt.plot(self.__history.history['val_accuracy'])
+        plt.title('model accuracy')
+        plt.ylabel('accuracy')
+        plt.xlabel('epoch')
+        plt.legend(['train', 'val'], loc='upper left')
+        plt.show()
+        self.__logger(f"plot accuracy finished", "__plot_accuracy")
+
+    def __plot_loss(self):
+        self.__logger(f"plot loss started", "__plot_los")
+        plt.plot(self.__history.history['loss'])
+        plt.plot(self.__history.history['val_loss'])
+        plt.title('model loss')
+        plt.ylabel('loss')
+        plt.xlabel('epoch')
+        plt.legend(['train', 'val'], loc='upper left')
+        plt.show()
+        self.__logger(f"plot loss finished", "__plot_los")
 
     def __after_train_processing(self):
         self.__logger("start", "__after_train_processing")
