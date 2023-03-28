@@ -11,14 +11,15 @@ from keras.layers import MaxPooling2D
 from keras.layers import Dense
 from keras.layers import Flatten
 from keras.optimizers import SGD
+import CNNUtils.imageProcessing as ip
 
 
 class Model:
     def __init__(self,
                  dataset: any,
+                 img_proc: ip.ImageProc,
                  classes_number: int,
                  input_shape: any,
-                 color_scale: int,
                  batch_size: int,
                  epochs: int,
                  save_path: string,
@@ -41,10 +42,10 @@ class Model:
                  with_info: bool = True,
                  verbose: int = 1):
         self.__dataset = dataset
+        self.__img_proc = img_proc
         self.__classes_number = classes_number
         self.__input_shape = input_shape
         self.__shape_x, self.__shape_y, self.__shape_z = input_shape
-        self.__color_scale = color_scale
         self.__batch_size = batch_size
         self.__epochs = epochs
         self.__save_path: string = save_path
@@ -124,7 +125,7 @@ class Model:
                           f"predicted test data: {value}, possibility: {possibility:.{self.__possibility_precision}f}")
 
     def predict_image(self, path: any):
-        img_raw = ip.rec_digit(path, self.__shape_x, self.__shape_y, self.__color_scale)
+        img_raw = self.__img_proc.transform(path)
         img4predict = np.array(img_raw).reshape((-1, self.__shape_x, self.__shape_y, self.__shape_z))
         prediction = self.__model.predict(img4predict)
         possibility, value = self.__get_predicted_data(prediction[0])
