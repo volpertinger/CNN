@@ -1,6 +1,6 @@
 import string
-
 import numpy as np
+import matplotlib.pyplot as plt
 from tensorflow import keras
 from keras.datasets import mnist
 from keras.utils import to_categorical
@@ -11,13 +11,13 @@ from keras.layers import Dense
 from keras.layers import Flatten
 from keras.optimizers import SGD
 
-# todo: save\load logs
-# todo: проверка на сохранение перед train
+
 class Model:
     def __init__(self,
                  dataset: any,
                  classes_number: int,
                  input_shape: any,
+                 color_shape: int,
                  batch_size: int,
                  epochs: int,
                  save_path: string,
@@ -34,11 +34,16 @@ class Model:
                  small_dense: int,
                  large_dense: int,
                  small_filter: int,
-                 large_filter: int):
+                 large_filter: int,
+                 cmap: string,
+                 possibility_precision: int,
+                 with_info: bool = True,
+                 verbose: int = 1):
         self.__dataset = dataset
         self.__classes_number = classes_number
         self.__input_shape = input_shape
         self.__shape_x, self.__shape_y, self.__shape_z = input_shape
+        self.__color_shape = color_shape
         self.__batch_size = batch_size
         self.__epochs = epochs
         self.__save_path: string = save_path
@@ -56,12 +61,20 @@ class Model:
         self.__large_dense = large_dense
         self.__small_filter = small_filter
         self.__large_filter = large_filter
+        self.__cmap = cmap
+        self.__possibility_precision = possibility_precision
+        self.__with_info = with_info
+        self.__verbose = verbose
 
         self.__log = ""
         self.__is_trained = False
+        self.__prediction = None
 
         # Load the data and split it between train and test sets
         (train_input, train_output), (test_input, test_output) = mnist.load_data()
+        # normalizing input data
+        train_input = self.__scale_pixels(train_input)
+        test_input = self.__scale_pixels(test_input)
         # reshape dataset to have a single channel
         self.__train_input = train_input.reshape((train_input.shape[0], self.__shape_x, self.__shape_y, self.__shape_z))
         self.__test_input = test_input.reshape((test_input.shape[0], self.__shape_x, self.__shape_y, self.__shape_z))
@@ -73,7 +86,7 @@ class Model:
         self.__logger(f"train samples number: {self.__train_input.shape[0]}")
         self.__logger(f"test samples number: {self.__test_input.shape[0]}")
 
-        self.__model = self.define_model()
+        self.__model = self.__define_model()
 
     # ------------------------------------------------------------------------------------------------------------------
     # Public
@@ -83,22 +96,42 @@ class Model:
 
     def train(self):
         try:
-            load = self.__model.load_weights(self.__save_path)
+            self.__logger("starting load", "train")
+            load = keras.models.load_model(self.__save_path)
             if load is None:
+                self.__logger("load failed", "train")
                 self.__train()
             else:
+                self.__logger("load successful", "train")
                 self.__model = load
-                self.__is_trained = True
+                self.__after_train_processing()
         except:
             self.__train()
+
+    def hard_train(self):
+        self.__train()
+
+    def predict_test(self, index: int):
+        if not self.__is_trained:
+            return
+        max_index = len(self.__test_input) - 1
+        if index >= max_index or index < 0:
+            self.__logger(f"wrong index. Index must be from 0 to {max_index}", "predict_test")
+            return
+        possibility, value = self.__get_predicted_data(index)
+        self.__show_image(self.__test_input[index],
+                          f"predicted data: {value}, possibility: {possibility:.{self.__possibility_precision}f}")
 
     # ------------------------------------------------------------------------------------------------------------------
     # Private
     # ------------------------------------------------------------------------------------------------------------------
     def __logger(self, message: string, prefix: string = ""):
-        self.__log += f"[{prefix}] {message}\n"
+        log = f"[{prefix}] {message}\n"
+        if self.__with_info:
+            print(log)
+        self.__log += log
 
-    def define_model(self):
+    def __define_model(self):
         model = Sequential()
         model.add(
             Conv2D(self.__small_filter, self.__large_dot, activation=self.__common_activation,
@@ -118,20 +151,40 @@ class Model:
         model.compile(optimizer=opt, loss=self.__loss, metrics=self.__loss)
         return model
 
-    # run the test harness for evaluating a model
     def __train(self):
+        self.__logger("start train", "__train")
         self.__model.fit(self.__train_input, self.__train_output, epochs=self.__epochs, batch_size=self.__batch_size,
-                         verbose=1)
-        self.__is_trained = True
+                         verbose=self.__verbose)
+        self.__after_train_processing()
+        self.__logger("saving", "__train")
         self.__model.save(self.__save_path)
-        _, acc = self.__model.evaluate(self.__test_input, self.__test_output, verbose=0)
-        self.__logger('> %.3f' % (acc * 100.0))
+        _, acc = self.__model.evaluate(self.__test_input, self.__test_output, verbose=self.__verbose)
+        self.__logger(f"accuracy: {acc}", "__train")
+
+    def __after_train_processing(self):
+        self.__logger("start", "__after_train_processing")
+        self.__is_trained = True
+        self.__prediction = self.__model.predict(self.__test_input)
+        self.__logger("end", "__after_train_processing")
+
+    def __show_image(self, image: any, label: string = ""):
+        plt.imshow(image, cmap=self.__cmap)
+        plt.axis('off')
+        plt.title(label)
+        plt.show()
+
+    def __get_predicted_data(self, index):
+        possibility = 0
+        result_index = 0
+        current_index = 0
+        for element in self.__prediction[index]:
+            if element > possibility:
+                possibility = element
+                result_index = current_index
+            current_index += 1
+        return possibility, result_index
 
     @staticmethod
-    def __scale_pixels(train, test):
-        train_norm = train.astype('float32')
-        test_norm = test.astype('float32')
-        # todo: константы
-        train_norm = train_norm / 255.0
-        test_norm = test_norm / 255.0
-        return train_norm, test_norm
+    def __scale_pixels(data):
+        result = data / data.max()
+        return result
