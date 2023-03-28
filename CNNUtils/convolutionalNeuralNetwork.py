@@ -128,9 +128,11 @@ class Model:
         img4predict = np.array(img_raw).reshape((-1, self.__shape_x, self.__shape_y, self.__shape_z))
         prediction = self.__model.predict(img4predict)
         possibility, value = self.__get_predicted_data(prediction[0])
-        self.__show_image(img_raw,
-                          f"predicted data: {value}, possibility: {possibility:.{self.__possibility_precision}f}")
-        return value
+        return possibility, value
+
+    def get_predict_string(self, path: any):
+        possibility, value = self.predict_image(path)
+        return f"predicted data: {value}, possibility: {possibility:.{self.__possibility_precision}f}"
 
     # ------------------------------------------------------------------------------------------------------------------
     # Private
