@@ -1,6 +1,7 @@
 import CNNUtils.convolutionalNeuralNetwork as cnn
 import Configuration.confCNN as cc
 import CNNUtils.imageProcessing as ip
+import TelegramUtils.server as ss
 
 if __name__ == '__main__':
     img_proc = ip.ImageProc(cc.TRANSFORM_MATRIX, cc.SHIFT_SCALE, cc.DATA_SCALE, cc.INPUT_SHAPE,
@@ -11,6 +12,6 @@ if __name__ == '__main__':
                       cc.KERNEL_INITIALIZER, cc.LEARNING_RATE, cc.MOMENTUM, cc.LOSS, cc.METRICS, cc.SMALL_DOT,
                       cc.LARGE_DOT, cc.SMALL_DENSE, cc.LARGE_DENSE, cc.SMALL_FILTER, cc.LARGE_FILTER, cc.CMAP,
                       cc.POSSIBILITY_PRECISION, cc.WITH_INFO, cc.VERBOSE)
-    print(model.get_log())
     model.train()
-    print(model.predict_image("media/0.png"))
+    telegram_bot = ss.TelegramBot(model)
+    telegram_bot.start()
