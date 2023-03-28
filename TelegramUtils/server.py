@@ -6,7 +6,6 @@ from telegram import Update
 from telegram.ext import filters, MessageHandler, ApplicationBuilder, CommandHandler, ContextTypes, CallbackContext
 
 
-# todo: Constants
 class TelegramBot:
     def __init__(self, model: cnn.Model):
         logging.basicConfig(
