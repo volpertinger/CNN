@@ -82,15 +82,15 @@ class ImageProc:
             border = cv2.resize(border, (cols, rows))
 
         # fitting to image size
-        colsPadding = (int(math.ceil((self.__img_shape_x - cols) / self.__shift_scale)),
-                       int(math.floor((self.__img_shape_x - cols) / self.__shift_scale)))
-        rowsPadding = (int(math.ceil((self.__img_shape_y - rows) / self.__shift_scale)),
-                       int(math.floor((self.__img_shape_y - rows) / self.__shift_scale)))
-        border = np.lib.pad(border, (rowsPadding, colsPadding))
+        cols_padding = (int(math.ceil((self.__img_shape_x - cols) / self.__shift_scale)),
+                        int(math.floor((self.__img_shape_x - cols) / self.__shift_scale)))
+        rows_padding = (int(math.ceil((self.__img_shape_y - rows) / self.__shift_scale)),
+                        int(math.floor((self.__img_shape_y - rows) / self.__shift_scale)))
+        border = np.lib.pad(border, (rows_padding, cols_padding))
 
         # shifting center of mass
-        shiftx, shifty = self.__get_best_shift(border)
-        shifted = self.__shift(border, shiftx, shifty)
+        shift_x, shift_y = self.__get_best_shift(border)
+        shifted = self.__shift(border, shift_x, shift_y)
         border = shifted
 
         img = border / self.__max_color_sensitivity
